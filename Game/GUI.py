@@ -71,7 +71,6 @@ class GUI:
         exit_button = ttk.Button(self.root, text="EXIT", command=self.root.quit, style="Menu.TButton")
         exit_button.pack(pady=10)
 
-
     def show_board_size_selection(self):
         self.board_size_x_scale = None
         self.board_size_y_scale = None
@@ -176,21 +175,7 @@ class GUI:
 
         self.square_size = 600 // max(self.board_size_x, self.board_size_y)
 
-        for i in range(self.board_size_x):
-            for j in range(self.board_size_y):
-                x = i * self.square_size
-                y = j * self.square_size
-
-                square = self.canvas.create_rectangle(x, y, x + self.square_size, y + self.square_size,
-                                                      outline="black", fill="white")
-
-                organism = self.curr_world_.getOrganism(i, j)
-                if organism is not None:
-                    image = Image.open(self.animal_icons[organism.name])
-                    image = image.resize((self.square_size, self.square_size), Image.ANTIALIAS)
-                    image = ImageTk.PhotoImage(image)
-                    organism.icon = self.canvas.create_image(x, y, image=image, anchor="nw")
-                    self.animal_icons_on_board.append(image)
+        self.display_board()
 
         info_frame = Frame(self.board_window)
         info_frame.pack(side="right", padx=200)
@@ -213,6 +198,29 @@ class GUI:
     def update_board(self):
         self.canvas.delete("all")
 
+        self.display_board()
+
+        game_info = "\n".join(self.curr_world_.infoStream_)
+        game_info = game_info.replace("{", "").replace("}", "")
+        self.info_label.config(text=game_info)
+        self.curr_world_.infoStream_.clear()
+        self.curr_world_.performTurn()
+
+        if self.curr_world_.human_alive is False:
+            self.display_board()
+
+            game_info = "\n".join(self.curr_world_.infoStream_)
+            game_info = game_info.replace("{", "").replace("}", "")
+            self.info_label.config(text=game_info)
+            messagebox.showinfo("Game Over!", "You lost!")
+            self.board_window.destroy()
+            self.root.deiconify()
+            return
+
+        self.board_window.after(0, self.update_board)
+        self.board_window.mainloop()
+
+    def display_board(self):
         for i in range(self.board_size_x):
             for j in range(self.board_size_y):
                 x = i * self.square_size
@@ -228,14 +236,6 @@ class GUI:
                     image = ImageTk.PhotoImage(image)
                     organism.icon = self.canvas.create_image(x, y, image=image, anchor="nw")
                     self.animal_icons_on_board.append(image)
-
-        game_info = "\n".join(self.curr_world_.infoStream_)
-        game_info = game_info.replace("{", "").replace("}", "")
-        self.info_label.config(text=game_info)
-        self.curr_world_.infoStream_.clear()
-        self.curr_world_.performTurn()
-        self.board_window.after(0, self.update_board)
-        self.board_window.mainloop()
 
     def load_game(self):
         file_path = filedialog.askopenfilename(filetypes=[("Game Files", "*.world")])

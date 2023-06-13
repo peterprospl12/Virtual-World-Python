@@ -127,6 +127,10 @@ class World:
     def pine_borscht_exist(self, value):
         self.pine_borscht_exist_ = value
 
+    @property
+    def human_alive(self):
+        return self.human_alive_
+
     def changeBoardSize(self, new_x, new_y):
         self.board_size_x_ = new_x
         self.board_size_y_ = new_y
