@@ -1,9 +1,10 @@
-from tkinter import Tk, Scale, Button, messagebox, Canvas, Toplevel
-from tkinter.ttk import Style, Label, Frame
+from tkinter import Tk, Scale, Button, messagebox, Canvas, Toplevel, filedialog, ttk
+from tkinter.ttk import Label, Frame
 import tkinter.font as tkfont
 from PIL import Image, ImageTk
 
 from Organisms.Animals.Antelope import Antelope
+from Organisms.Animals.BlackSheep import BlackSheep
 from Organisms.Animals.Fox import Fox
 from Organisms.Animals.Human import Human
 from Organisms.Animals.Sheep import Sheep
@@ -18,13 +19,19 @@ from Organisms.Plants.Wolfberries import WolfBerries
 
 class GUI:
     def __init__(self, curr_world):
+        self.info_label = None
+        self.square_size = None
+        self.canvas = None
+        self.board_size_y_scale = None
+        self.board_size_x_scale = None
+        self.board_size_window = None
         self.board_window = None
         self.root = Tk()
-        self.root.title("Main Menu")
-        self.root.geometry("800x600")  # Ustawienie rozmiaru okna
+        self.root.title("Piotr Sulewski 19254 - Virtual World")
+        self.root.geometry("800x600")
 
         self.curr_world_ = curr_world
-        self.board_size_x = curr_world.board_size_x_  # Domyślne rozmiary planszy
+        self.board_size_x = curr_world.board_size_x_
         self.board_size_y = curr_world.board_size_y_
 
         self.animal_icons = {
@@ -39,34 +46,41 @@ class GUI:
             "PineBorscht": "images/pineborscht.png",
             "WolfBerries": "images/wolfberries.png",
             "Dandelion": "images/dandelion.png",
+            "BlackSheep": "images/blacksheep.png"
         }
-        self.animal_icons_on_board = []  # Initialize the list
+        self.animal_icons_on_board = []
 
         self.selected_animal_icon = None
 
         self.create_main_menu()
 
     def create_main_menu(self):
-        font = tkfont.Font(size=20)  # Ustalenie rozmiaru czcionki dla przycisków
+        font = tkfont.Font(size=20)
 
-        start_button = Button(self.root, text="START GAME", command=self.show_board_size_selection, font=font)
-        start_button.pack(pady=20, side="bottom")
+        # Stylizacja przycisków
+        button_style = ttk.Style()
+        button_style.configure("Menu.TButton", font=font, padding=10, width=15)
 
-        load_button = Button(self.root, text="LOAD GAME", command=self.load_game, font=font)
-        load_button.pack(pady=20, side="bottom")
+        start_button = ttk.Button(self.root, text="START GAME", command=self.show_board_size_selection,
+                                  style="Menu.TButton")
+        start_button.pack(pady=10)
 
-        exit_button = Button(self.root, text="EXIT", command=self.root.quit, font=font)
-        exit_button.pack(pady=20, side="bottom")
+        load_button = ttk.Button(self.root, text="LOAD GAME", command=self.load_game, style="Menu.TButton")
+        load_button.pack(pady=10)
+
+        exit_button = ttk.Button(self.root, text="EXIT", command=self.root.quit, style="Menu.TButton")
+        exit_button.pack(pady=10)
+
 
     def show_board_size_selection(self):
         self.board_size_x_scale = None
         self.board_size_y_scale = None
 
         if self.root.winfo_ismapped():
-            self.root.withdraw()  # Ukryj główne menu
+            self.root.withdraw()
 
         self.board_size_window = Toplevel(self.root)
-        self.board_size_window.title("Board Size Selection")
+        self.board_size_window.title("Piotr Sulewski 19254 - Virtual World")
         self.board_size_window.geometry("900x900")
 
         size_label = Label(self.board_size_window, text="Select Board Size:", font=("Arial", 14))
@@ -91,11 +105,11 @@ class GUI:
 
     def show_board(self):
         self.curr_world_.changeBoardSize(self.board_size_x, self.board_size_y)
-        self.board_size_window.withdraw()  # Ukryj okno wyboru rozmiaru planszy
+        self.board_size_window.withdraw()
 
         self.board_window = Toplevel(self.root)
-        self.board_window.title("Game Board")
-        self.board_window.geometry("800x600")
+        self.board_window.title("Piotr Sulewski 19254 - Virtual World")
+        self.board_window.geometry("1500x1000")
 
         self.canvas = Canvas(self.board_window, width=600, height=600)
         self.canvas.pack(side="left")
@@ -127,7 +141,12 @@ class GUI:
 
     def square_clicked(self, x, y):
         organism = self.curr_world_.getOrganism(x, y)
-        if organism is not None:
+
+        if self.selected_animal_icon == self.animal_icons["Human"] and self.curr_world_.human_alive_ \
+                is True and not isinstance(organism, Human):
+            messagebox.showinfo("You can't place more than one human on the board!",
+                                "You can't place more than one human on the board!")
+        elif organism is not None:
             self.curr_world_.removeOrganism(self.curr_world_.getOrganism(x, y))
             if organism.icon is not None:
                 self.canvas.delete(organism.icon)
@@ -146,13 +165,11 @@ class GUI:
                 self.curr_world_.addOrganism(new_organism)
                 self.animal_icons_on_board.append(image)
 
-                # Aktualizujemy powiązanie zdarzenia dla kwadratu
                 self.canvas.tag_bind(new_organism.icon, "<Button-1>", lambda event, x=x, y=y: self.square_clicked(x, y))
 
     def mainGame(self):
         for widget in self.board_window.winfo_children():
             widget.destroy()
-
 
         self.canvas = Canvas(self.board_window, width=600, height=600)
         self.canvas.pack(side="left")
@@ -175,14 +192,23 @@ class GUI:
                     organism.icon = self.canvas.create_image(x, y, image=image, anchor="nw")
                     self.animal_icons_on_board.append(image)
 
-        buttons_frame = Frame(self.board_window)
-        buttons_frame.pack(side="right", padx=20)
+        info_frame = Frame(self.board_window)
+        info_frame.pack(side="right", padx=200)
+
+        self.info_label = Label(info_frame, text="Game Information", font=("Arial", 12), wraplength=900, justify="left")
+        self.info_label.pack()
+
+        save_button = Button(self.board_window, text="Save Game", command=self.open_save_dialog)
+        save_button.pack(side="top", pady=10)
+
         self.update_board()
-        self.curr_world_.performTurn()
 
-        self.board_window.mainloop()
-
-
+    def open_save_dialog(self):
+        filename = filedialog.asksaveasfilename(
+            initialfile="game", defaultextension=".world", filetypes=[("World Files", "*.world"), ("All Files", "*.*")]
+        )
+        if filename:
+            self.curr_world_.saveWorld(filename)
 
     def update_board(self):
         self.canvas.delete("all")
@@ -203,12 +229,29 @@ class GUI:
                     organism.icon = self.canvas.create_image(x, y, image=image, anchor="nw")
                     self.animal_icons_on_board.append(image)
 
-        self.board_window.after(1000, self.update_board)  # Odświeżanie planszy co 1000 ms
-
+        game_info = "\n".join(self.curr_world_.infoStream_)
+        game_info = game_info.replace("{", "").replace("}", "")
+        self.info_label.config(text=game_info)
+        self.curr_world_.infoStream_.clear()
+        self.curr_world_.performTurn()
+        self.board_window.after(0, self.update_board)
+        self.board_window.mainloop()
 
     def load_game(self):
-        messagebox.showinfo("Load Game", "Loading game...")
-        # Tutaj możesz dodać kod wczytujący zapisaną grę
+        file_path = filedialog.askopenfilename(filetypes=[("Game Files", "*.world")])
+        if file_path:
+            if self.board_window is not None:
+                self.board_window.destroy()
+
+            self.curr_world_.loadWorld(file_path)
+            self.board_size_y = self.curr_world_.board_size_y
+            self.board_size_x = self.curr_world_.board_size_x
+            self.root.withdraw()
+
+            self.board_window = Toplevel(self.root)
+            self.board_window.title("Game Board")
+            self.board_window.geometry("1500x1000")
+            self.mainGame()
 
     def start(self):
         self.root.mainloop()
@@ -236,3 +279,5 @@ class GUI:
             return WolfBerries(posX, posY, self.curr_world_)
         elif name == "human":
             return Human(posX, posY, self.curr_world_)
+        elif name == "blacksheep":
+            return BlackSheep(posX, posY, self.curr_world_)

@@ -15,46 +15,79 @@ class Human(Animal):
         self.board_window_ = None
         self.current_key = None
 
-    def on_key_press(self, event):
-        if event.keysym == "Up":
-            self.current_key = "Up"
-        elif event.keysym == "Down":
-            self.current_key = "Down"
-        elif event.keysym == "Left":
-            self.current_key = "Left"
-        elif event.keysym == "Right":
-            self.current_key = "Right"
-        elif event.keysym == "space":
-            self.current_key = "Space"
-        elif event.keysym == "Escape":
-            self.current_key = "Escape"
-
     def makeMove(self, newX, newY):
-        newX = self.pos_x_
-        newY = self.pos_y_
+        self.current_key = None
+        self.move_ready = False
         self.board_window_ = self.curr_world_.gui.board_window
         self.board_window_.bind("<KeyPress>", self.on_key_press)
         self.board_window_.focus_set()
-        self.curr_world_.drawWorld()
-        while self.current_key not in ["Up", "Down", "Left", "Right"]:
-            # Oczekiwanie na ruch gracza
-            self.board_window_.update()  # Aktualizacja interfejsu użytkownika
-            time.sleep(0.1)  # Opóźnienie, aby nie obciążać zbytnio procesora
+
+        while not self.move_ready:
+            self.board_window_.update()
+            time.sleep(0.1)
+
+        moveX = newX
+        moveY = newY
 
         if self.current_key == "Up" and newY >= 1:
             print("up")
-            newY -= 1
+            moveY -= 1
         elif self.current_key == "Down" and newY < self.curr_world_.board_size_y - 1:
             print("down")
-            newY += 1
+            moveY += 1
         elif self.current_key == "Left" and newX >= 1:
             print("left")
-            newX -= 1
+            moveX -= 1
         elif self.current_key == "Right" and newX < self.curr_world_.board_size_x - 1:
             print("right")
-            newX += 1
-        self.current_key = None
-        return newX, newY
+            moveX += 1
+        elif self.current_key == "Escape":
+            self.curr_world_.gui.load_game()
+        elif self.current_key == "Caps_Lock":
+            if self.skill_cooldown == 0:
+                self.skill_used = True
+                self.skill_cooldown = 11
+                self.curr_world_.infoStream_.append(self.getOrganismInfo() + " used skill!")
+            else:
+                self.curr_world_.infoStream_.append(self.getOrganismInfo() + " skill is on cooldown!")
+
+            return self.pos_x_, self.pos_y_
+
+        if self.skill_used is True:
+            self.skill_cooldown -= 1
+            if self.skill_cooldown < 6:
+                if self.skill_cooldown == 0:
+                    self.skill_used = False
+            else:
+                curr_pos_x = self.pos_x_
+                curr_pos_y = self.pos_y_
+                pos_to_skip_x = -10
+                pos_to_skip_y = -10
+                moves = [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]
+
+                for i in range(8):
+                    pos_to_kill_x = curr_pos_x + moves[i][0]
+                    pos_to_kill_y = curr_pos_y + moves[i][1]
+
+                    if pos_to_kill_x == pos_to_skip_x and pos_to_kill_y == pos_to_skip_y:
+                        continue
+
+                    if 0 <= pos_to_kill_x < self.curr_world_.board_size_x and 0 <= pos_to_kill_y < self.curr_world_.board_size_y:
+                        if self.curr_world_.getOrganism(pos_to_kill_x, pos_to_kill_y) is not None:
+                            self.curr_world_.infoStream_.append(
+                                self.getOrganismInfo() + " has killed " + self.curr_world_.getOrganism(pos_to_kill_x,
+                                                                                                       pos_to_kill_y).getOrganismInfo() + " with his skill! \n")
+                            self.curr_world_.removeOrganism(self.curr_world_.getOrganism(pos_to_kill_x, pos_to_kill_y))
+
+                self.curr_world_.infoStream_.append(
+                    self.getOrganismInfo() + " skill is activated for " + str(self.skill_cooldown - 5) + " turns! \n")
+
+        return moveX, moveY
+
+    def on_key_press(self, event):
+        if event.keysym in ["Up", "Down", "Left", "Right", "Caps_Lock", "Escape"]:
+            self.current_key = event.keysym
+            self.move_ready = True
 
     @property
     def skill_cooldown(self):

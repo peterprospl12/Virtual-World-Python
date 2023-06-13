@@ -71,6 +71,10 @@ class Organism(ABC):
     def name(self):
         return self.name_
 
+    @property
+    def prefix(self):
+        return self.prefix_
+
     def getOrganismInfo(self):
         return "[" + self.name_ + "] " + "Age: " + str(self.age_)
 

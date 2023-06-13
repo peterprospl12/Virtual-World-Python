@@ -24,14 +24,14 @@ class Plant(Organism):
 
             while self.curr_world_.getOrganism(newX, newY) is not None and try_counter < 40:
                 try_counter += 1
-                self.makeMove(newX, newY)
+                newX, newY = self.makeMove(newX, newY)
 
             if try_counter >= 40:
                 return
 
             kid = self.clone(newX, newY)
             self.curr_world_.addOrganism(kid)
-            # add to infostream
+            self.curr_world_.infoStream_.append(kid.getOrganismInfo() + " has grown on (" + str(newX) + ", " + str(newY) + ") \n")
 
     def makeMove(self, newX, newY):
         newX = self.pos_x_
@@ -41,7 +41,7 @@ class Plant(Organism):
 
         while try_counter < 40:
             try_counter += 1
-            rand_number = random.randint(0, 8)
+            rand_number = random.randint(0, 7)
             dx = moves[rand_number][0]
             dy = moves[rand_number][1]
 

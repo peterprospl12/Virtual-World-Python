@@ -19,26 +19,28 @@ class Animal(Organism):
 
         if self.curr_world_.getOrganism(newX, newY) is not None:
 
-
             defender = self.curr_world_.getOrganism(newX, newY)
 
             if isinstance(defender, Animal):
                 if self.checkMultiply(defender):
-                    print(self.name_, "has multiplied at", self.pos_x_, self.pos_y_)
                     return
 
             if defender.collision(self):
                 return
 
             if defender.hasBlocked(self):
-                print(self.name_, "has been killed by", defender.name_, "at", defender.pos_x_, defender.pos_y_)
+                self.curr_world_.infoStream_.append(
+                    defender.getOrganismInfo() + " blocked and killed " + self.getOrganismInfo() + "\n")
                 self.curr_world_.removeOrganism(self)
             else:
-                print(defender.name_, "has been killed by", self.name_, "at", self.pos_x_, self.pos_y_)
+                self.curr_world_.infoStream_.append(
+                    self.getOrganismInfo() + " killed " + defender.getOrganismInfo() + " and moved to (" + str(
+                        newX) + ", " + str(newY) + ") \n")
                 self.curr_world_.removeOrganism(self.curr_world_.getOrganism(newX, newY))
                 self.setNewPosition(newX, newY)
         else:
-            # add to infostream
+            self.curr_world_.infoStream_.append(
+                self.getOrganismInfo() + " has moved to (" + str(newX) + ", " + str(newY) + ") \n")
             self.setNewPosition(newX, newY)
 
     def collision(self, attacker):
@@ -77,13 +79,13 @@ class Animal(Organism):
             newX = self.pos_x_
             newY = self.pos_y_
             try_counter = 0
-            while self.curr_world_.getOrganism(newX, newY) is not self and try_counter < 40:
+            while self.curr_world_.getOrganism(newX, newY) is not None and try_counter < 40:
                 rand_number = random.randint(1, 2)
 
                 if rand_number == 1:
-                    self.makeMove(newX, newY)
+                    newX, newY = self.makeMove(newX, newY)
                 else:
-                    defender.makeMove(newX, newY)
+                    newX, newY = defender.makeMove(newX, newY)
                 try_counter += 1
 
             if try_counter >= 40:
@@ -91,7 +93,8 @@ class Animal(Organism):
 
             kid = self.clone(newX, newY)
             self.curr_world_.addOrganism(kid)
-            # add to infostream
+            self.curr_world_.infoStream_.append(
+                kid.getOrganismInfo() + " was born at (" + str(newY) + ", " + str(newX) + ") \n")
             return True
 
         return False

@@ -8,7 +8,7 @@ PINE_BORSCHT_INITIATIVE = 0
 class PineBorscht(Plant):
 
     def __init__(self, pos_x, pos_y, curr_world):
-        super().__init__(PINE_BORSCHT_STRENGTH, PINE_BORSCHT_INITIATIVE, pos_x, pos_y, 'B', "PineBorscht", curr_world)
+        super().__init__(PINE_BORSCHT_STRENGTH, PINE_BORSCHT_INITIATIVE, pos_x, pos_y, 'P', "PineBorscht", curr_world)
 
     def action(self):
         newX = self.pos_x_
@@ -24,14 +24,18 @@ class PineBorscht(Plant):
                 org_to_kill = self.curr_world_.getOrganism(pos_to_kill_X, pos_to_kill_Y)
 
                 if isinstance(org_to_kill, Animal):
-                    # add to info stream
+                    if org_to_kill.name == "BlackSheep":
+                        continue
+                    self.curr_world_.infoStream_.append(
+                        self.getOrganismInfo() + " has killed " + org_to_kill.getOrganismInfo() + " on (" + str(
+                            pos_to_kill_X) + ", " + str(pos_to_kill_Y) + ")\n")
                     self.curr_world_.removeOrganism(org_to_kill)
 
         super().action()
 
     def collision(self, invader):
         self.curr_world_.removeOrganism(invader)
-        # add info stream
+        self.curr_world_.infoStream_.append(invader.getOrganismInfo() + " has eaten " + self.getOrganismInfo() + " and died \n")
         return True
 
     def clone(self, clone_pos_x, clone_pos_y):

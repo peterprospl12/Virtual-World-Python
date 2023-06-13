@@ -11,7 +11,7 @@ class WolfBerries(Plant):
 
     def collision(self, invader):
         self.curr_world_.removeOrganism(invader)
-        # add info stream
+        self.curr_world_.infoStream_.append(invader.getOrganismInfo() + " has eaten " + self.getOrganismInfo() + " and died! \n")
         return True
 
     def clone(self, clone_pos_x, clone_pos_y):

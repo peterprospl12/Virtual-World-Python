@@ -11,7 +11,7 @@ class Guarana(Plant):
 
     def collision(self, invader):
         invader.strength += 3
-        # add info stream
+        self.curr_world_.infoStream_.append(invader.getOrganismInfo() + " has eaten " + self.getOrganismInfo() + " and gained 3 strength points! \n")
         return False
 
     def clone(self, clone_pos_x, clone_pos_y):
